@@ -35,7 +35,7 @@ Set up your local development environment completely. By the end of this issue, 
 8. Install dependencies: `pip install -r requirements.txt`
 9. Install Playwright: `playwright install chromium`
 10. Copy env file: `cp .env.example .env` and fill in Groq API key (free at console.groq.com)
-11. Ensure PostgreSQL is running, then create the database:
+11. Ensure PostgreSQL is running, then create the database:-
 
     ```sh
     # Start PostgreSQL
