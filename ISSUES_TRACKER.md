@@ -35,7 +35,18 @@ Set up your local development environment completely. By the end of this issue, 
 8. Install dependencies: `pip install -r requirements.txt`
 9. Install Playwright: `playwright install chromium`
 10. Copy env file: `cp .env.example .env` and fill in Groq API key (free at console.groq.com)
-11. Create database: `createdb hireflow`
+11. Ensure PostgreSQL is running, then create the database:
+
+    ```bash
+    # Start PostgreSQL
+    brew services start postgresql@16
+
+    # Check if it's running
+    brew services list
+
+    # Create database
+    createdb hireflow
+    ```
 
 ### How it affects overall development
 
