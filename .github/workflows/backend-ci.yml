@@ -49,8 +49,8 @@ jobs:
         run: |
           alembic upgrade head
 
-      - name: Run pytest
+      - name: Run backend tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hireflow
         run: |
-          pytest tests/test_models.py -v
+          pytest tests/ -v
