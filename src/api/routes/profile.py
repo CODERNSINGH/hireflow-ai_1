@@ -225,8 +225,8 @@ async def create_profile_pdf(
 
     The PDF text is extracted and passed to the configured LLM for structured
     extraction. Any explicitly provided form fields override the LLM output.
-    At minimum, `name`, `email`, and `mode` are required (either from the form
-    or extracted by the LLM).
+    At minimum, `name` and `email` are required (either from the form or extracted
+    by the LLM), and `mode` must be provided explicitly as a form field.
     """
     # Validate content type
     if file.content_type not in ("application/pdf", "application/octet-stream"):
