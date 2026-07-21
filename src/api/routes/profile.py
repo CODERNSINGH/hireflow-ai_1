@@ -184,7 +184,7 @@ def create_profile_json(
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        logger.warning("Failed to create profile: email already exists. Error: %s", exc)
+        logger.warning("Failed to create profile due to an IntegrityError (likely duplicate email).")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A user with this email address is already registered.",
