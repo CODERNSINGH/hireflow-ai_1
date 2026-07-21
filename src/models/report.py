@@ -3,9 +3,10 @@ from datetime import datetime
 
 from src.models import Base
 
+
 class WeeklyReport(Base):
     __tablename__ = "weekly_reports"
-    
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     week_start = Column(DateTime, nullable=False)

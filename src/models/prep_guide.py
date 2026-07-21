@@ -3,9 +3,10 @@ from datetime import datetime
 
 from src.models import Base
 
+
 class PrepGuide(Base):
     __tablename__ = "prep_guides"
-    
+
     id = Column(Integer, primary_key=True)
     application_id = Column(Integer, ForeignKey("applications.id"), nullable=False)
     company_name = Column(String, nullable=False)

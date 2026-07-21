@@ -249,7 +249,7 @@ curl -X POST http://localhost:8000/profile \
 curl http://localhost:8000/profile/{user_id}
 
 # Verify in database
-psql hireflow -c "SELECT id, name, mode, weekly_quota FROM users;"
+  psql hireflow -c "SELECT id, name, mode, weekly_quota FROM users;"
 
 # Run tests
 pytest tests/test_profile_api.py -v
