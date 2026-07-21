@@ -76,8 +76,8 @@ class Settings(BaseSettings):
     # Application Config
     # ------------------------------------------------------------------ #
     APP_ENV: str = "development"
-    DEBUG: bool = True
-    SECRET_KEY: str = "change_this_to_a_random_secret_string"
+    DEBUG: bool = False
+    SECRET_KEY: Optional[str] = None
     ALLOWED_ORIGINS: str = "http://localhost:3000"
 
     # ------------------------------------------------------------------ #
