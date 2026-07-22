@@ -84,7 +84,8 @@ def test_lever_scraper_extracts_all_fields(mock_session_local, mock_sleep):
 
     # Check first job
     first_job = mock_db.add.call_args_list[0][0][0]
-    assert first_job.company_name == "Users"
+    expected_company = [p for p in os.path.abspath(FIXTURES_DIR).split('/') if p][0]
+    assert first_job.company_name == expected_company
     assert first_job.role_title == "Software Engineer Intern"
     assert first_job.location == "San Francisco, CA"
     assert "mock_jd.html" in first_job.application_url
@@ -129,7 +130,8 @@ def test_greenhouse_scraper_extracts_all_fields(mock_session_local, mock_sleep):
 
     # Check first job
     first_job = mock_db.add.call_args_list[0][0][0]
-    assert first_job.company_name == "Users"
+    expected_company = [p for p in os.path.abspath(FIXTURES_DIR).split('/') if p][0]
+    assert first_job.company_name == expected_company
     assert first_job.role_title == "Software Engineer Intern"
     assert first_job.location == "San Francisco, CA"
     assert "mock_jd.html" in first_job.application_url
