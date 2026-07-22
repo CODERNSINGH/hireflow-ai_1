@@ -3,9 +3,10 @@ from datetime import datetime
 
 from src.models import Base
 
+
 class Job(Base):
     __tablename__ = "jobs"
-    
+
     id = Column(Integer, primary_key=True)
     company_name = Column(String, nullable=False)
     role_title = Column(String, nullable=False)

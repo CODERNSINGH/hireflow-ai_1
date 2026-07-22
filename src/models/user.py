@@ -5,13 +5,15 @@ import enum
 
 from src.models import Base
 
+
 class ApplicationMode(str, enum.Enum):
     internship = "internship"
     job = "job"
 
+
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
