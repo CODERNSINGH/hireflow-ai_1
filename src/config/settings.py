@@ -7,6 +7,7 @@ Never hardcode secrets here — all values come from environment variables.
 from functools import lru_cache
 from typing import Optional
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,9 +35,10 @@ class Settings(BaseSettings):
 
     # Groq (free tier — recommended for students)
     GROQ_API_KEY: Optional[str] = None
-    GROQ_MODEL: str = "llama3-8b-8192"
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
 
     # Google Gemini (free tier)
+    GEMINI_API_KEY: Optional[str] = None
     GOOGLE_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-1.5-flash"
 
@@ -84,6 +86,14 @@ class Settings(BaseSettings):
     # Frontend
     # ------------------------------------------------------------------ #
     NEXT_PUBLIC_API_URL: str = "http://localhost:8000"
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def parse_debug(cls, value: object) -> object:
+        """Handle deployment-style DEBUG values such as DEBUG=release."""
+        if isinstance(value, str) and value.strip().lower() in {"release", "prod"}:
+            return False
+        return value
 
 
 @lru_cache(maxsize=1)

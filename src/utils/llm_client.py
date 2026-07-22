@@ -4,14 +4,13 @@ Abstracts over multiple LLM providers behind a single interface.
 
 All concrete clients implement:
   .chat(prompt: str) -> str
-  .extract(text: str, schema: dict | type[BaseModel]) -> dict
+  .extract(text: str) -> dict
 
 Usage:
     from src.utils.llm_client import get_llm_client
-    from src.config.settings import get_settings
 
-    client = get_llm_client(get_settings())
-    result = client.extract(resume_text, ProfileExtractSchema)
+    client = get_llm_client()
+    result = client.extract(resume_text)
 """
 
 from __future__ import annotations
@@ -21,6 +20,8 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from typing import Any, Union
+
+from src.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,18 @@ def _build_extract_prompt(text: str, schema: Union[dict, Any]) -> str:
     )
 
 
+def _build_generic_extract_prompt(text: str) -> str:
+    """Build a generic JSON-only extraction prompt."""
+    return (
+        "You are a structured data extraction assistant.\n"
+        "Extract the useful structured information from the text below and return "
+        "ONLY a valid JSON object. Do not include any explanation, markdown fences, "
+        "or extra text - just the raw JSON.\n\n"
+        f"Text to extract from:\n{text}\n\n"
+        "Return only JSON:"
+    )
+
+
 def _safe_parse(raw: str) -> dict:
     """Parse LLM output to a dict, degrading gracefully on malformed JSON."""
     cleaned = _strip_markdown_fences(raw)
@@ -75,17 +88,37 @@ def _safe_parse(raw: str) -> dict:
         if isinstance(result, dict):
             return result
         logger.warning("LLM returned valid JSON but not a dict: %s", type(result))
-        return {}
+        return {
+            "error": "failed to parse LLM output",
+            "raw_output": raw,
+        }
     except json.JSONDecodeError as exc:
         logger.warning(
             "LLM returned malformed JSON (error: %s). Raw output: %.200s", exc, raw
         )
-        return {}
+        return {
+            "error": "failed to parse LLM output",
+            "raw_output": raw,
+        }
 
 
 # --------------------------------------------------------------------------- #
 # Abstract base
 # --------------------------------------------------------------------------- #
+
+
+class MissingAPIKeyError(ValueError):
+    """Raised when the selected provider is missing its required API key."""
+
+
+def _require_api_key(value: str | None, variable_name: str, help_url: str) -> str:
+    """Return a non-empty API key or raise a clear configuration error."""
+    if value and value.strip():
+        return value
+    raise MissingAPIKeyError(
+        f"{variable_name} is not set. Add it to your .env file. "
+        f"Get a key at {help_url}"
+    )
 
 
 class BaseLLMClient(ABC):
@@ -95,18 +128,25 @@ class BaseLLMClient(ABC):
     def chat(self, prompt: str) -> str:
         """Send a free-form prompt and return the model's text response."""
 
-    def extract(self, text: str, schema: Union[dict, Any]) -> dict:
-        """Extract structured data from *text* matching *schema*.
+    def extract(self, text: str, schema: Union[dict, Any, None] = None) -> dict:
+        """Extract structured data from *text*.
 
-        Returns a dict. Never raises — on LLM or parse errors it returns
-        an empty dict and logs a warning so callers always get a usable result.
+        The optional schema argument lets callers request a specific output shape
+        while the simple extract(text) form remains available everywhere.
         """
-        prompt = _build_extract_prompt(text, schema)
+        prompt = (
+            _build_extract_prompt(text, schema)
+            if schema is not None
+            else _build_generic_extract_prompt(text)
+        )
         try:
             raw = self.chat(prompt)
         except Exception as exc:  # noqa: BLE001
             logger.warning("LLM chat call failed during extraction: %s", exc)
-            return {}
+            return {
+                "error": "failed to parse LLM output",
+                "raw_output": str(exc),
+            }
         return _safe_parse(raw)
 
 
@@ -118,7 +158,14 @@ class BaseLLMClient(ABC):
 class GroqClient(BaseLLMClient):
     """Client for the Groq inference API (free tier, fast Llama/Mixtral)."""
 
-    def __init__(self, api_key: str, model: str) -> None:
+    def __init__(self, settings: Any | None = None) -> None:
+        settings = settings or get_settings()
+        api_key = _require_api_key(
+            settings.GROQ_API_KEY,
+            "GROQ_API_KEY",
+            "https://console.groq.com",
+        )
+
         try:
             from groq import Groq  # type: ignore[import]
         except ImportError as exc:
@@ -127,7 +174,7 @@ class GroqClient(BaseLLMClient):
             ) from exc
 
         self._client = Groq(api_key=api_key)
-        self._model = model
+        self._model = getattr(settings, "GROQ_MODEL", "llama-3.1-8b-instant")
 
     def chat(self, prompt: str) -> str:
         response = self._client.chat.completions.create(
@@ -140,7 +187,15 @@ class GroqClient(BaseLLMClient):
 class GeminiClient(BaseLLMClient):
     """Client for Google Gemini (free tier via google-generativeai)."""
 
-    def __init__(self, api_key: str, model: str) -> None:
+    def __init__(self, settings: Any | None = None) -> None:
+        settings = settings or get_settings()
+        api_key = _require_api_key(
+            getattr(settings, "GEMINI_API_KEY", None)
+            or getattr(settings, "GOOGLE_API_KEY", None),
+            "GEMINI_API_KEY or GOOGLE_API_KEY",
+            "https://aistudio.google.com",
+        )
+
         try:
             import google.generativeai as genai  # type: ignore[import]
         except ImportError as exc:
@@ -150,7 +205,9 @@ class GeminiClient(BaseLLMClient):
             ) from exc
 
         genai.configure(api_key=api_key)
-        self._model = genai.GenerativeModel(model)
+        self._model = genai.GenerativeModel(
+            getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
+        )
 
     def chat(self, prompt: str) -> str:
         response = self._model.generate_content(prompt)
@@ -160,7 +217,14 @@ class GeminiClient(BaseLLMClient):
 class OpenAIClient(BaseLLMClient):
     """Client for the OpenAI API (GPT-4o, GPT-4-turbo, etc.)."""
 
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini") -> None:
+    def __init__(self, settings: Any | None = None) -> None:
+        settings = settings or get_settings()
+        api_key = _require_api_key(
+            settings.OPENAI_API_KEY,
+            "OPENAI_API_KEY",
+            "https://platform.openai.com/api-keys",
+        )
+
         try:
             from openai import OpenAI  # type: ignore[import]
         except ImportError as exc:
@@ -169,7 +233,7 @@ class OpenAIClient(BaseLLMClient):
             ) from exc
 
         self._client = OpenAI(api_key=api_key)
-        self._model = model
+        self._model = getattr(settings, "OPENAI_MODEL", "gpt-4o-mini")
 
     def chat(self, prompt: str) -> str:
         response = self._client.chat.completions.create(
@@ -182,7 +246,14 @@ class OpenAIClient(BaseLLMClient):
 class AnthropicClient(BaseLLMClient):
     """Client for Anthropic's Claude models."""
 
-    def __init__(self, api_key: str, model: str = "claude-3-haiku-20240307") -> None:
+    def __init__(self, settings: Any | None = None) -> None:
+        settings = settings or get_settings()
+        api_key = _require_api_key(
+            settings.ANTHROPIC_API_KEY,
+            "ANTHROPIC_API_KEY",
+            "https://console.anthropic.com/settings/keys",
+        )
+
         try:
             import anthropic  # type: ignore[import]
         except ImportError as exc:
@@ -191,7 +262,7 @@ class AnthropicClient(BaseLLMClient):
             ) from exc
 
         self._client = anthropic.Anthropic(api_key=api_key)
-        self._model = model
+        self._model = getattr(settings, "ANTHROPIC_MODEL", "claude-3-haiku-20240307")
 
     def chat(self, prompt: str) -> str:
         message = self._client.messages.create(
@@ -206,22 +277,25 @@ class AnthropicClient(BaseLLMClient):
 class OllamaClient(BaseLLMClient):
     """Client for locally-running Ollama models (no API key required)."""
 
-    def __init__(self, base_url: str, model: str) -> None:
+    def __init__(self, settings: Any | None = None) -> None:
         try:
-            import httpx  # type: ignore[import]
+            import requests  # type: ignore[import]
         except ImportError as exc:
             raise ImportError(
-                "The 'httpx' package is not installed. Run: pip install httpx"
+                "The 'requests' package is not installed. Run: pip install requests"
             ) from exc
 
-        self._base_url = base_url.rstrip("/")
-        self._model = model
-        self._httpx = httpx
+        settings = settings or get_settings()
+        self._base_url = getattr(
+            settings, "OLLAMA_BASE_URL", "http://localhost:11434"
+        ).rstrip("/")
+        self._model = getattr(settings, "OLLAMA_MODEL", "llama3")
+        self._requests = requests
 
     def chat(self, prompt: str) -> str:
         url = f"{self._base_url}/api/generate"
         payload = {"model": self._model, "prompt": prompt, "stream": False}
-        response = self._httpx.post(url, json=payload, timeout=120)
+        response = self._requests.post(url, json=payload, timeout=120)
         response.raise_for_status()
         return response.json().get("response", "")
 
@@ -231,56 +305,27 @@ class OllamaClient(BaseLLMClient):
 # --------------------------------------------------------------------------- #
 
 
-def get_llm_client(settings: Any) -> BaseLLMClient:
+def get_llm_client(settings: Any | None = None) -> BaseLLMClient:
     """Instantiate and return the correct LLM client based on settings.LLM_PROVIDER.
 
-    Raises ValueError with a descriptive human-readable message if the required
-    API key for the selected provider is missing — never a bare AttributeError or
-    stack trace.
+    Raises MissingAPIKeyError with a descriptive human-readable message if the
+    required API key for the selected provider is missing.
     """
+    settings = settings or get_settings()
     provider = settings.LLM_PROVIDER.lower().strip()
 
-    if provider == "groq":
-        if not settings.GROQ_API_KEY:
-            raise ValueError(
-                "LLM_PROVIDER is set to 'groq' but GROQ_API_KEY is not set. "
-                "Get a free key at console.groq.com and add it to your .env file."
-            )
-        return GroqClient(api_key=settings.GROQ_API_KEY, model=settings.GROQ_MODEL)
+    clients: dict[str, type[BaseLLMClient]] = {
+        "groq": GroqClient,
+        "gemini": GeminiClient,
+        "openai": OpenAIClient,
+        "anthropic": AnthropicClient,
+        "ollama": OllamaClient,
+    }
 
-    if provider == "gemini":
-        if not settings.GOOGLE_API_KEY:
-            raise ValueError(
-                "LLM_PROVIDER is set to 'gemini' but GOOGLE_API_KEY is not set. "
-                "Get a free key at aistudio.google.com and add it to your .env file."
-            )
-        return GeminiClient(
-            api_key=settings.GOOGLE_API_KEY, model=settings.GEMINI_MODEL
-        )
-
-    if provider == "openai":
-        if not settings.OPENAI_API_KEY:
-            raise ValueError(
-                "LLM_PROVIDER is set to 'openai' but OPENAI_API_KEY is not set. "
-                "Add your OpenAI key to the .env file."
-            )
-        return OpenAIClient(api_key=settings.OPENAI_API_KEY)
-
-    if provider == "anthropic":
-        if not settings.ANTHROPIC_API_KEY:
-            raise ValueError(
-                "LLM_PROVIDER is set to 'anthropic' but ANTHROPIC_API_KEY is not set. "
-                "Add your Anthropic key to the .env file."
-            )
-        return AnthropicClient(api_key=settings.ANTHROPIC_API_KEY)
-
-    if provider == "ollama":
-        return OllamaClient(
-            base_url=settings.OLLAMA_BASE_URL, model=settings.OLLAMA_MODEL
-        )
+    if provider in clients:
+        return clients[provider](settings)
 
     raise ValueError(
-        f"Unknown LLM_PROVIDER: '{settings.LLM_PROVIDER}'. "
-        "Valid options are: groq, gemini, openai, anthropic, ollama. "
-        "Check your .env file."
+        f"Unknown LLM_PROVIDER '{settings.LLM_PROVIDER}'. Must be one of: "
+        "groq, gemini, openai, anthropic, ollama"
     )

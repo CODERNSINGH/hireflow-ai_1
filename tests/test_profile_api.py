@@ -1,5 +1,5 @@
 """
-Tests for the User Profile Onboarding API (Issue 4).
+Tests for the User Profile Onboarding API.
 
 These tests use an in-memory SQLite database so they require no real
 PostgreSQL instance.  The `get_db` FastAPI dependency is overridden
