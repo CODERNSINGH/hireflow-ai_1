@@ -81,6 +81,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     SECRET_KEY: Optional[str] = None
     ALLOWED_ORIGINS: str = "http://localhost:3000"
+    SPAM_FILTER_THRESHOLD: float = 0.7
 
     # ------------------------------------------------------------------ #
     # Frontend
