@@ -163,3 +163,25 @@ def test_greenhouse_scraper_empty_page(mock_session_local, mock_sleep):
     scrape_greenhouse(EMPTY_FIXTURE_URL, "job")
 
     assert mock_db.add.call_count == 0
+
+
+@patch("src.scrapers.generic_scraper.scrape_dynamic")
+@patch("src.scrapers.generic_scraper.scrape_static")
+@patch("src.scrapers.generic_scraper.is_page_dynamic")
+def test_generic_scraper_routing(mock_is_dynamic, mock_scrape_static, mock_scrape_dynamic):
+    from src.scrapers.generic_scraper import scrape_generic
+
+    # Test static routing
+    mock_is_dynamic.return_value = False
+    scrape_generic("http://example.com", "job")
+    mock_scrape_static.assert_called_once_with("http://example.com", "job")
+    mock_scrape_dynamic.assert_not_called()
+
+    mock_scrape_static.reset_mock()
+    mock_scrape_dynamic.reset_mock()
+
+    # Test dynamic routing
+    mock_is_dynamic.return_value = True
+    scrape_generic("http://example.com", "job")
+    mock_scrape_dynamic.assert_called_once_with("http://example.com", "job")
+    mock_scrape_static.assert_not_called()
