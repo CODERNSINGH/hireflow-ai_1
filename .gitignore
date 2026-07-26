@@ -38,6 +38,7 @@ htmlcov/
 *.ipynb_checkpoints
 
 # Generated resumes and reports (large binary files)
+data/faiss_index/
 data/resumes/
 data/reports/
 *.pdf
