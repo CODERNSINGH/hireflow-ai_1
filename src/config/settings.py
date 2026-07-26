@@ -75,6 +75,11 @@ class Settings(BaseSettings):
     LOCAL_STORAGE_PATH: str = "./data"
 
     # ------------------------------------------------------------------ #
+    # Embeddings & Vector Search
+    # ------------------------------------------------------------------ #
+    EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
+
+    # ------------------------------------------------------------------ #
     # Application Config
     # ------------------------------------------------------------------ #
     APP_ENV: str = "development"
