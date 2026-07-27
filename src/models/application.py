@@ -12,6 +12,8 @@ class Application(Base):
     job_id = Column(Integer, ForeignKey("jobs.id"), nullable=False)
     match_score = Column(Float, nullable=True)
     skill_gaps = Column(String, nullable=True)
+    skill_matches = Column(String, nullable=True)  # JSON-encoded list of matched skills
+    rank = Column(Integer, nullable=True)  # Ranking position (1 = best)
     resume_path = Column(String, nullable=True)
     status = Column(
         String, nullable=False, default="pending"
