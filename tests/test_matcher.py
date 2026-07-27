@@ -85,6 +85,7 @@ def test_db_session() -> Generator[Session, None, None]:
                 skill_gaps VARCHAR,
                 skill_matches VARCHAR,
                 rank INTEGER,
+                cycle_start_date DATE,
                 resume_path VARCHAR,
                 status VARCHAR NOT NULL DEFAULT 'pending',
                 created_at DATETIME
