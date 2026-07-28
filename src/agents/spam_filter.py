@@ -1,6 +1,6 @@
 import re
 import argparse
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from src.config.settings import get_settings
 from src.config.database import SessionLocal
