@@ -21,5 +21,17 @@ class Application(Base):
     resume_version = Column(Integer, nullable=True, default=1)
     status = Column(
         String, nullable=False, default="pending"
-    )  # pending, planned, confirmed, resume_pending, applied, failed, needs_action
+    )  # pending, planned, confirmed, resume_pending, applying, applied, failed, needs_action
+    failure_reason = Column(String, nullable=True)
+    applied_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ApplicationStatusLog(Base):
+    __tablename__ = "application_status_logs"
+
+    id = Column(Integer, primary_key=True)
+    application_id = Column(Integer, ForeignKey("applications.id"), nullable=False)
+    status = Column(String, nullable=False)
+    reason = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
