@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CAPTCHA Test Form</title>
+</head>
+<body>
+    <h1>Apply for Python Intern</h1>
+    <form id="application-form">
+        <label for="name">Full Name *</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="email">Email Address *</label>
+        <input type="email" id="email" name="email" required><br><br>
+
+        <!-- Mock reCAPTCHA iframe -->
+        <div class="g-recaptcha">
+            <iframe src="https://www.google.com/recaptcha/api2/anchor?ar=1&k=dummykey" width="304" height="78"></iframe>
+        </div>
+
+        <button type="submit" id="submit-btn">Submit Application</button>
+    </form>
+</body>
+</html>
