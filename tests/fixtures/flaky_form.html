@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Flaky Test Form</title>
+</head>
+<body>
+    <h1>Apply for Python Intern</h1>
+    
+    <div id="content">
+        <!-- JS will either load a form or throw an error depending on localStorage / attempt count -->
+    </div>
+
+    <script>
+        // Simulate a flaky form that fails to load on the first attempt but succeeds on the second
+        let attempt = parseInt(localStorage.getItem('flaky_attempt') || '0');
+        attempt++;
+        localStorage.setItem('flaky_attempt', attempt);
+
+        const contentDiv = document.getElementById('content');
+
+        if (attempt === 1) {
+            // First attempt: Simulate a network/timeout error or 503 error
+            contentDiv.innerHTML = "<h2>503 Service Unavailable</h2><p>Please try again later.</p>";
+        } else {
+            // Subsequent attempts: Load the form normally
+            contentDiv.innerHTML = `
+                <form id="application-form">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" name="name" required><br><br>
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required><br><br>
+                    <button type="submit" id="submit-btn">Submit Application</button>
+                </form>
+                <div id="success-message" style="display: none; color: green;">
+                    <h2>Application Submitted Successfully!</h2>
+                </div>
+            `;
+
+            // Reset attempt counter so subsequent tests run fresh
+            localStorage.setItem('flaky_attempt', '0');
+
+            document.getElementById('application-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                if (name && email) {
+                    this.style.display = 'none';
+                    document.getElementById('success-message').style.display = 'block';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

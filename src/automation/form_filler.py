@@ -7,6 +7,9 @@ from src.utils.llm_client import get_llm_client
 
 logger = logging.getLogger(__name__)
 
+class PermanentFailureError(Exception):
+    pass
+
 class FormFiller:
     def __init__(self):
         self.llm_client = get_llm_client()
@@ -28,38 +31,35 @@ class FormFiller:
             "error_reason": None
         }
 
-        try:
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                context = browser.new_context()
-                page = context.new_page()
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context()
+            page = context.new_page()
 
-                logger.info(f"Navigating to {application_url}")
-                page.goto(application_url, wait_until="networkidle")
+            logger.info(f"Navigating to {application_url}")
+            
+            # This can throw PlaywrightTimeoutError or Error (e.g. net::ERR_CONNECTION_REFUSED)
+            page.goto(application_url, wait_until="networkidle")
 
-                # Fill standard fields
-                self._fill_standard_fields(page, user_profile, result["fields_filled"])
+            # Fill standard fields
+            self._fill_standard_fields(page, user_profile, result["fields_filled"])
 
-                # Upload resume
-                self._upload_resume(page, resume_path, result["fields_filled"])
+            # Upload resume
+            self._upload_resume(page, resume_path, result["fields_filled"])
 
-                # Fill free text fields
-                self._fill_free_text_fields(page, user_profile, jd_text, result["fields_filled"])
+            # Fill free text fields
+            self._fill_free_text_fields(page, user_profile, jd_text, result["fields_filled"])
 
-                # Submit form
-                submit_success = self._submit_form(page)
+            # Submit form
+            submit_success = self._submit_form(page)
 
-                if submit_success:
-                    result["status"] = "applied"
-                else:
-                    result["status"] = "failed"
-                    result["error_reason"] = "Could not verify successful submission"
-
+            if submit_success:
+                result["status"] = "applied"
+            else:
                 browser.close()
-        except Exception as e:
-            logger.error(f"Error filling form: {e}")
-            result["status"] = "failed"
-            result["error_reason"] = str(e)
+                raise PermanentFailureError("Could not verify successful submission or submit button missing.")
+
+            browser.close()
 
         return result
 
