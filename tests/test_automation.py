@@ -147,11 +147,13 @@ def test_captcha_detection(mock_get_llm, captcha_form_url, dummy_resume_path, us
     assert result["status"] == "needs_action"
     assert "CAPTCHA" in result["error_reason"]
 
+@patch("src.automation.form_filler.get_llm_client")
 @patch("src.agents.application_agent.FormFiller.fill_and_submit")
-def test_flaky_form_retry_success(mock_fill, flaky_form_url, dummy_resume_path, user_profile, jd_text):
+def test_flaky_form_retry_success(mock_fill, mock_get_llm, flaky_form_url, dummy_resume_path, user_profile, jd_text):
     """
     Test Case 5: Flaky form fails on attempt 1, succeeds on attempt 2.
     """
+    mock_get_llm.return_value = MagicMock()
     from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
     mock_fill.side_effect = [
         PlaywrightTimeoutError("Network timeout"),
