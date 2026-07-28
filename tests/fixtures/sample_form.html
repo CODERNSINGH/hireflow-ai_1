@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sample Job Application Form</title>
+</head>
+<body>
+    <h1>Apply for Python Intern</h1>
+    <form id="application-form">
+        <label for="name">Full Name *</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="email">Email Address *</label>
+        <input type="email" id="email" name="email" required><br><br>
+
+        <label for="phone">Phone Number</label>
+        <input type="text" id="phone" name="phone"><br><br>
+
+        <label for="education">Highest Education Level</label>
+        <select id="education" name="education">
+            <option value="">Select...</option>
+            <option value="high_school">High School</option>
+            <option value="bachelors">Bachelor's Degree</option>
+            <option value="masters">Master's Degree</option>
+            <option value="phd">PhD</option>
+        </select><br><br>
+
+        <label for="experience">Years of Experience</label>
+        <input type="number" id="experience" name="experience"><br><br>
+
+        <label for="skills">Key Skills (comma separated)</label>
+        <input type="text" id="skills" name="skills"><br><br>
+
+        <label for="resume">Upload Resume (PDF) *</label>
+        <input type="file" id="resume" name="resume" accept=".pdf" required><br><br>
+
+        <label for="why_work_here">Why do you want to work here? *</label><br>
+        <textarea id="why_work_here" name="why_work_here" rows="4" cols="50" required></textarea><br><br>
+
+        <button type="submit" id="submit-btn">Submit Application</button>
+    </form>
+
+    <div id="success-message" style="display: none; color: green;">
+        <h2>Application Submitted Successfully!</h2>
+        <p>Thank you for applying.</p>
+    </div>
+
+    <script>
+        document.getElementById('application-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent actual form submission for testing
+            
+            // Simple validation check for required fields
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const resume = document.getElementById('resume').value;
+            const why = document.getElementById('why_work_here').value;
+
+            if (name && email && resume && why) {
+                this.style.display = 'none';
+                document.getElementById('success-message').style.display = 'block';
+            } else {
+                alert('Please fill all required fields');
+            }
+        });
+    </script>
+</body>
+</html>
