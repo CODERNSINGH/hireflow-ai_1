@@ -85,6 +85,7 @@ def test_db_session() -> Generator[Session, None, None]:
                 rank INTEGER,
                 cycle_start_date DATE,
                 resume_path VARCHAR,
+                resume_version INTEGER,
                 status VARCHAR NOT NULL DEFAULT 'pending',
                 created_at DATETIME
             )
@@ -693,8 +694,8 @@ class TestConfirmPlan:
             .all()
         )
         assert len(confirmed_apps) == 2, "Both should be resume_pending after stub"
-        for app in confirmed_apps:
-            assert app.cycle_start_date == _current_week_monday()
+        for confirmed_app in confirmed_apps:
+            assert confirmed_app.cycle_start_date == _current_week_monday()
 
         # Verify the non-confirmed job is still "pending"
         unplanned_app = (
@@ -960,6 +961,7 @@ def _create_test_tables(engine):
                 rank INTEGER,
                 cycle_start_date DATE,
                 resume_path VARCHAR,
+                resume_version INTEGER,
                 status VARCHAR NOT NULL DEFAULT 'pending',
                 created_at DATETIME
             )

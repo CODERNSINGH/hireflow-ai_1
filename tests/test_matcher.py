@@ -87,6 +87,7 @@ def test_db_session() -> Generator[Session, None, None]:
                 rank INTEGER,
                 cycle_start_date DATE,
                 resume_path VARCHAR,
+                resume_version INTEGER,
                 status VARCHAR NOT NULL DEFAULT 'pending',
                 created_at DATETIME
             )
