@@ -18,6 +18,7 @@ class Application(Base):
         Date, nullable=True
     )  # Monday of the ISO week this plan entry belongs to
     resume_path = Column(String, nullable=True)
+    resume_version = Column(Integer, nullable=True, default=1)
     status = Column(
         String, nullable=False, default="pending"
     )  # pending, planned, confirmed, resume_pending, applied, failed, needs_action

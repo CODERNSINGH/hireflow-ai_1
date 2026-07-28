@@ -1,0 +1,99 @@
+\documentclass[11pt]{article}
+
+% --- Packages ---
+\usepackage[margin=1in]{geometry}
+\usepackage{parskip}
+\usepackage{hyperref}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{titlesec}
+
+% --- Colours ---
+\definecolor{heading}{HTML}{2D3748}
+\definecolor{accent}{HTML}{4A5568}
+
+% --- Section heading style ---
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{heading}}{}{0em}{}[\vspace{-0.3em}\rule{\textwidth}{0.5pt}]
+\titlespacing*{\section}{0pt}{1em}{0.5em}
+
+% --- Hyperlink setup ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=accent,
+    urlcolor=accent,
+    citecolor=accent,
+}
+
+% =============================================================================
+\begin{document}
+
+% --- Header ---
+\begin{center}
+    {\LARGE \textbf{\VAR{user_name|latex_escape}}}\\[0.3em]
+    {\small \href{mailto:\VAR{user_email}}{\VAR{user_email|latex_escape}}}
+\end{center}
+
+\vspace{0.5em}
+
+% --- Summary ---
+\section*{Summary}
+
+\VAR{summary|latex_escape}
+
+% --- Skills ---
+\section*{Skills}
+
+\BLOCK{if skills}
+\VAR{skills|join(", ")|latex_escape}
+\BLOCK{endif}
+
+% --- Projects ---
+\section*{Projects}
+
+\BLOCK{for project in projects}
+\noindent\textbf{\VAR{project["name"]|latex_escape}}
+\BLOCK{if project.get("tech")}
+~--~\textit{\VAR{project["tech"]|join(", ")|latex_escape}}
+\BLOCK{endif}
+
+\VAR{project.get("description", "")|latex_escape}
+
+\vspace{0.5em}
+\BLOCK{endfor}
+
+% --- Experience (omitted if empty) ---
+\BLOCK{if experience}
+\section*{Experience}
+
+\BLOCK{for exp in experience}
+\noindent\textbf{\VAR{exp.get("title", "")|latex_escape}}
+\BLOCK{if exp.get("company")}
+~--~\textit{\VAR{exp["company"]|latex_escape}}
+\BLOCK{endif}
+\BLOCK{if exp.get("duration")}
+\hfill \VAR{exp["duration"]|latex_escape}
+\BLOCK{endif}
+
+\BLOCK{if exp.get("description")}
+\VAR{exp["description"]|latex_escape}
+\BLOCK{endif}
+
+\vspace{0.5em}
+\BLOCK{endfor}
+\BLOCK{endif}
+
+% --- Education (omitted if None) ---
+\BLOCK{if education}
+\section*{Education}
+
+\noindent\textbf{\VAR{education.get("degree", "")|latex_escape}}
+\BLOCK{if education.get("university")}
+~--~\textit{\VAR{education["university"]|latex_escape}}
+\BLOCK{endif}
+\BLOCK{if education.get("year")}
+\hfill \VAR{education["year"]|latex_escape}
+\BLOCK{endif}
+\BLOCK{endif}
+
+\end{document}
