@@ -89,6 +89,8 @@ def test_db_session() -> Generator[Session, None, None]:
                 resume_path VARCHAR,
                 resume_version INTEGER,
                 status VARCHAR NOT NULL DEFAULT 'pending',
+                failure_reason VARCHAR,
+                applied_at DATETIME,
                 created_at DATETIME
             )
         """)
